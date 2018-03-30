@@ -1,0 +1,27 @@
+INSTALL XPCC
+
+(copied from http://xpcc.io/installation/ 26.1.2017)
+
+
+1.basic build system:
+-------------------
+	sudo apt-get install python python-jinja2 scons git
+
+
+2.AVR toochain:
+-------------
+	sudo apt-get install gcc-avr binutils-avr avr-libc avrdude
+
+
+3.ARM toolchain
+---------------
+sudo add-apt-repository ppa:team-gcc-arm-embedded/ppa
+sudo apt-get update
+sudo apt-get install gcc-arm-embedded openocd
+
+
+4.To compile programs for x86 systems install the following packets:
+-------------------------------------------------------------------
+sudo apt-get install gcc build-essential libboost-thread-dev \
+                     libboost-system-dev libasio-dev
+

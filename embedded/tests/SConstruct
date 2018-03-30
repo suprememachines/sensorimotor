@@ -1,0 +1,11 @@
+
+env = Environment( PROJECT_NAME = 'sensorimotor_tests'
+                 , CCFLAGS      = ['-Wall' , '-Wextra']
+#                , LIBS         = ['framework'],
+                 , CPPPATH      = ['#src', '#../firmware']
+                 , CXXFLAGS     = ['-std=c++0x']
+                 )
+
+tests = env.Program('tests', [ 'src/tests_main.cpp'
+                             , 'src/communication_tests.cpp'])
+
