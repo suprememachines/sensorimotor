@@ -1,14 +1,23 @@
-#ifndef SUPREME_COMMUNICATION_SENDBUFFER_HPP
-#define SUPREME_COMMUNICATION_SENDBUFFER_HPP
+/*---------------------------------+
+ | Supreme Machines                |
+ | Sensorimotor Firmware           |
+ | Matthias Kubisch                |
+ | kubisch@informatik.hu-berlin.de |
+ | November 2018                   |
+ +---------------------------------*/
+
+#ifndef SUPREME_SENDBUFFER_HPP
+#define SUPREME_SENDBUFFER_HPP
 
 #include <xpcc/architecture/platform.hpp>
-#include <assert.hpp>
+#include <system/assert.hpp>
 
 namespace supreme {
 
-template <unsigned N, unsigned NumSyncBytes = 2>
+template <unsigned N>
 class sendbuffer {
-	static const uint8_t chk_init = 0xFE; /* (0xff + 0xff) % 256*/
+	static const unsigned NumSyncBytes = 2;
+	static const uint8_t chk_init = 0xFE; /* (0xff + 0xff) % 256 */
 	uint16_t  ptr = NumSyncBytes;
 	uint8_t   buffer[N];
 	uint8_t   checksum = chk_init;
@@ -34,7 +43,7 @@ public:
 		add_checksum();
 		send_mode();
 		Uart0::write(buffer, ptr);
-		Uart0::flushWriteBuffer();
+		Uart0::flushWriteBuffer();    //TODO do not wait here, set an flag and check in com step to switch into recv mode again
 		receive_mode();
 		/* prepare next */
 		ptr = NumSyncBytes;
@@ -47,7 +56,7 @@ private:
 		checksum = chk_init;
 	}
 
-	// TODO move to communication interface class
+	// TODO move to (future) communication interface class
 	void send_mode() {
 		xpcc::delayNanoseconds(50); // wait for signal propagation
 		rs485::read_disable::set();
@@ -64,4 +73,4 @@ private:
 
 } /* namespace supreme */
 
-#endif /* SUPREME_COMMUNICATION_SENDBUFFER_HPP */
+#endif /* SUPREME_SENDBUFFER_HPP */

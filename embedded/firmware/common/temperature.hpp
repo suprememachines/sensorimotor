@@ -1,6 +1,15 @@
-/*
- Supreme Temperature Sensor
+/*---------------------------------+
+ | Supreme Machines                |
+ | Sensorimotor Firmware           |
+ | Matthias Kubisch                |
+ | kubisch@informatik.hu-berlin.de |
+ | November 2018                   |
+ +---------------------------------*/
 
+#ifndef SUPREME_TEMPERATURE_HPP
+#define SUPREME_TEMPERATURE_HPP
+
+/*
  30.05.2017 originally written by m.marmulla
  10.11.2017 revised by m.kubisch
 
@@ -58,3 +67,5 @@ inline int16_t get_temperature_celsius(uint16_t v_adc)
 }
 
 } /* namespace supreme */
+
+#endif /* SUPREME_TEMPERATURE_HPP */

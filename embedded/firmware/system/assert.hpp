@@ -1,3 +1,11 @@
+/*---------------------------------+
+ | Supreme Machines                |
+ | Sensorimotor Firmware           |
+ | Matthias Kubisch                |
+ | kubisch@informatik.hu-berlin.de |
+ | November 2018                   |
+ +---------------------------------*/
+
 #ifndef SUPREME_COMMON_ASSERT_HPP
 #define SUPREME_COMMON_ASSERT_HPP
 
@@ -36,6 +44,6 @@ void assert(bool condition, uint8_t code = 0) {
 	}
 }
 
-} // namespace supreme
+} /* namespace supreme */
 
 #endif /* SUPREME_COMMON_ASSERT_HPP */

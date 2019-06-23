@@ -1,0 +1,5 @@
+build/
+*.bak
+.sconsign.dblite
+*.gch
+run_tests

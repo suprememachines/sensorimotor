@@ -1,8 +1,17 @@
+/*---------------------------------+
+ | Supreme Machines                |
+ | Sensorimotor Firmware           |
+ | Matthias Kubisch                |
+ | kubisch@informatik.hu-berlin.de |
+ | November 2018                   |
+ +---------------------------------*/
+
 #ifndef SUPREME_ADC_HPP
 #define SUPREME_ADC_HPP
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <xpcc/architecture/platform.hpp>
 
 /*
 	+-------+-------+------------------------------------------+
@@ -11,7 +20,7 @@
 	|     0 |     0 | AREF, internal Vref is turned off        |
 	|     0 |     1 | AVCC with external capacitor at AREF pin |
 	|     1 |     0 | reserved                                 |
-	|     1 |     1 | int. 1V1 ref. with ext. cap at AREF pin |
+	|     1 |     1 | int. 1V1 ref. with ext. cap at AREF pin  |
 	+-------+-------+------------------------------------------+
 
 	ADMUX Register
@@ -25,11 +34,11 @@ namespace supreme {
 namespace adc {
 	const uint8_t vref = (1 << REFS0); // select AVCC as reference
 
-	const uint8_t position         = 1;
-	const uint8_t current          = 7;
-	const uint8_t voltage_back_emf = 3;
-	const uint8_t voltage_supply   = 6;
-	const uint8_t temperature      = 2;
+	const uint8_t position         = Board::adc_channel::position;
+	const uint8_t current          = Board::adc_channel::current;
+	const uint8_t voltage_back_emf = Board::adc_channel::voltage_back_emf;
+	const uint8_t voltage_supply   = Board::adc_channel::voltage_supply;
+	const uint8_t temperature      = Board::adc_channel::temperature;
 
 	const uint8_t first = position;
 
@@ -81,7 +90,6 @@ namespace adc {
 
 ISR(ADC_vect)
 {
-	led::yellow::set();
 	adc::result[adc::channel] = ADC;         // read result (10 bit)
 	adc::channel = adc::next[adc::channel];  // select next channel
 	adc::set_channel(adc::channel);          // multiplex adc
@@ -90,7 +98,6 @@ ISR(ADC_vect)
 		adc::start_conversion();
 	else
 		adc::conversion_finished = true;
-	led::yellow::reset();
 }
 
 } /* namespace supreme */
