@@ -1,6 +1,8 @@
 # sensorimotor
 Sensorimotor is a fully hackable, free-design hardware and free software smart servo controller.
 
+<img src="img/ux0_rev1_assembly.jpg" alt="Sensorimotor" width="50%">
+
 It is developed within the scope of my thesis and is optimized for the application in
 walking robots. However, a variety of other projects might benefit from it, too.
 
@@ -21,3 +23,6 @@ The input voltage range of the sensorimotor is 5–12.6 V. A simple low-dropout 
 voltage, the duty cycle of the motor output can be used to reduce the average voltage accordingly. The full schematics can be found in this repository.
 
 The board layout of the sensorimotor is designed to fit roughly into large-scale servos of different manufacturers. The SMT parts are restricted to be on a single side of the board to reduce manufacturing costs or allow for easier soldering. The power traces are made as wide as board space was available to reduce trace resistance and increase the heat sink. However, an additional heat sink should be considered when driving heavier loads.
+
+## Block Diagram
+![Block Diagram](/img/blockdiagram.jpg)
