@@ -3,7 +3,7 @@ Sensorimotor is a fully hackable, free-design hardware and free software smart s
 
 <img src="img/ux0_rev1_assembly.jpg" alt="Sensorimotor" width="50%">
 
-It is developed within the scope of my thesis and is optimized for the application in
+It is developed by Matthias Kubisch ([@ku3i](https://www.github.com/ku3i)) and is optimized for the application in
 walking robots. However, a variety of other projects might benefit from it, too.
 
 It comprises a fully integrated 6 A H-bridge (Infineon IFX9201SG) for
