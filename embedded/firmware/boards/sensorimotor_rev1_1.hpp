@@ -103,15 +103,12 @@ initialize()
 	motor::DIS::setOutput();
 
 	/* connect and setup uart */
-	D0::setInput(Gpio::InputType::PullUp);
-	D0::connect(Uart0::Rx);
-	D1::connect(Uart0::Tx);
-	Uart0::initialize<systemClock, Uart0::Baudrate::MBps1>(); // 1Mbaud/s
+	Uart0::connect<GpioOutputD1::Txd, GpioInputD0::Rxd>();
+	Uart0::initialize<systemClock, 1_MBd>(); // 1Mbaud/s
 
 	/* connect and setup I2C */
-	i2c::SDA::connect(I2cMaster::Sda);
-	i2c::SCL::connect(I2cMaster::Scl);
-	I2cMaster::initialize<systemClock, I2cMaster::Baudrate::Fast>();
+	I2cMaster::connect<i2c::SDA::Sda, i2c::SCL::Scl>();
+	I2cMaster::initialize<systemClock, 400_kBd>();
 
 	enableInterrupts();
 }
