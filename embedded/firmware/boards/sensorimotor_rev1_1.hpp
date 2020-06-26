@@ -11,14 +11,15 @@
 #ifndef SUPREME_SENSORIMOTOR_REV1_1_HPP
 #define SUPREME_SENSORIMOTOR_REV1_1_HPP
 
-#include <xpcc/architecture/platform.hpp>
+#include <modm/platform.hpp>
 
-using namespace xpcc::atmega;
+using namespace modm::literals;
+using namespace modm::platform;
 
 namespace Board
 {
 
-using systemClock = xpcc::avr::SystemClock;
+using systemClock = modm::platform::SystemClock;
 
 /* Arduino-compatible pin names */
 using A0 = GpioC0;

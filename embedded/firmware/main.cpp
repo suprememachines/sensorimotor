@@ -6,7 +6,7 @@
  | October 2018                    |
  +---------------------------------*/
 
-#include <xpcc/architecture/platform.hpp>
+#include <modm/platform.hpp>
 #include <boards/sensorimotor_rev1_1.hpp>
 #include <system/core.hpp>
 #include <system/communication.hpp>

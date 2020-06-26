@@ -8,10 +8,10 @@
 #ifndef SUPREME_I2C_SENSOR_HPP
 #define SUPREME_I2C_SENSOR_HPP
 
-#include <xpcc/architecture/platform.hpp>
-#include <xpcc/processing.hpp>
-#include <xpcc/processing/resumable.hpp>
-#include <xpcc/architecture/interface/i2c_master.hpp>
+#include <modm/platform.hpp>
+#include <modm/processing.hpp>
+#include <modm/processing/resumable.hpp>
+#include <modm/architecture/interface/i2c_master.hpp>
 #include <external/adxl345.hpp>
 
 namespace supreme {
@@ -25,7 +25,7 @@ namespace supreme {
  +----------------------------------------------------------------------*/
 
 template <typename SensorType, typename DataType>
-class ReaderThread : public xpcc::pt::Protothread, public xpcc::Resumable<1>
+class ReaderThread : public modm::pt::Protothread, public modm::Resumable<1>
 {
 	SensorType& s;
 	DataType& d;
@@ -51,7 +51,7 @@ public:
 
 private:
 
-	xpcc::ResumableResult<void> step()
+	modm::ResumableResult<void> step()
 	{
 		RF_BEGIN(0);
 
@@ -76,7 +76,7 @@ class ExternalSensor
 {
 	uint8_t data[16];
 
-	typedef xpcc::Adxl345<I2cMaster> sensor_t;
+	typedef modm::Adxl345<I2cMaster> sensor_t;
 	typedef struct Values { int16_t x,y,z; } data_t;
 
 	sensor_t sensor;

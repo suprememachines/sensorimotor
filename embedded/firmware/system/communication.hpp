@@ -9,7 +9,7 @@
 #ifndef SUPREME_COMMUNICATION_HPP
 #define SUPREME_COMMUNICATION_HPP
 
-#include <xpcc/architecture/platform.hpp>
+#include <modm/platform.hpp>
 #include <avr/eeprom.h>
 #include <system/assert.hpp>
 #include <system/sendbuffer.hpp>
