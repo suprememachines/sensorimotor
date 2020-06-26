@@ -2,3 +2,9 @@ build/
 *.bak
 .sconsign.dblite
 *.gch
+
+# unsure wether to include it or not
+# modm recomends to check them into git
+# @see(https://modm.io/guide/getting-started/#generate-and-compile)
+modm/
+project.xml.log
