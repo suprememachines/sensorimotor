@@ -58,16 +58,16 @@ private:
 
 	// TODO move to (future) communication interface class
 	void send_mode() {
-		modm::delayNanoseconds(50); // wait for signal propagation
+		modm::delay_ns(50); // wait for signal propagation
 		rs485::read_disable::set();
 		rs485::drive_enable::set();
-		modm::delayMicroseconds(1); // wait at least one bit after enabling the driver
+		modm::delay_us(1); // wait at least one bit after enabling the driver
 	}
 	void receive_mode() {
-		modm::delayMicroseconds(1); // wait at least one bit before disabling the driver
+		modm::delay_us(1); // wait at least one bit before disabling the driver
 		rs485::read_disable::reset();
 		rs485::drive_enable::reset();
-		modm::delayNanoseconds(70); // wait for signal propagation
+		modm::delay_ns(70); // wait for signal propagation
 	}
 };
 

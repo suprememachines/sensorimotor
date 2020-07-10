@@ -103,7 +103,7 @@ initialize()
 	motor::DIS::setOutput();
 
 	/* connect and setup uart */
-	Uart0::connect<GpioOutputD1::Txd, GpioInputD0::Rxd>();
+	Uart0::connect<D1::Txd, D0::Rxd>();
 	Uart0::initialize<systemClock, 1_MBd>(); // 1Mbaud/s
 
 	/* connect and setup I2C */
