@@ -1,0 +1,94 @@
+= Sensorimotor
+Doc Writer <kubisch@informatik.hu-berlin.de>
+v0.1, 2020-07-16
+:imagesdir: ./img/
+
+image:./ux0_rev1_assembly.jpg[Sensorimotor PCB, width="48%"]
+
+
+== A free-design smart motor controller.
+
+=== Summary
+Sensorimotor is a free-design, distributed DC servo controller that is networked via RS485 and aims at complementing the spectrum of low-cost robotic hardware for legged robots.
+
+Sensorimotor is originally developed and maintained by Matthias Kubisch (link:https://www.github.com/ku3i[ku3i] on GitHub) and is optimized for the application in walking robots. However, a variety of other projects might benefit from it, too.
+
+For instance, Sensorimotors are used for the link:https://www.jetpack.cl/products/Hannah[Hannah] four-legged robot and the bipedal robot link:https://github.com/aibrainag/gretchen[Gretchen]
+
+The boards are distributed by _Jetpack Cognition Lab_. You can link:https://www.tindie.com/products/jetpack/sensorimotor/[buy them here].
+
+=== Block Diagram
+image:./blockdiagram.jpg[Block Diagram]
+
+=== Hardware Details
+
+It comprises a fully integrated 6 A H-bridge (IFX9201SG) for driving DC motors, a failsafe RS485 driver (LTC2850) for reliable communication and an ATMEGA328P microcontroller for the computations. It has an onboard current sensor (ZXCT1022), a battery voltage sensing, reverse polarity protection (RPP), transient voltage suppression (TVS diode), and back-EMF voltage sensing. The circuit board provides connections for an external potentiometer (usually used as servo position sensor), temperature sensor and can be extended with other devices connected via I2C.
+
+The microcontroller runs at 16 MHz (ceramic resonator) and is dedicated to sending and receiving communication packages, computing motor control loops, setting pulse-width modulated (PWM) values and reading analog and external sensor inputs.
+
+Firmware is flashed with a simple standard 6-pin in-system programming adapter (ISP). The integrated H-bridge has higher-level features such as internal overtemperature protection and open load detection (if no motor is connected).
+
+image:./ux0_rev1_build_into_servo.jpg[Sensorimotor build into servo, width="43%"]
+image:./ux0_rev1_pcb_brd.png[Sensorimotor build into servo, width="50%"]
+
+The input voltage range of the sensorimotor is 5–12.6 V. A simple low-dropout linear regulator (MIC5225) provides the necessary 3V3 for the microcontroller and the other digital components. The input voltage is passed unregulated to the power electronics (and thus the motor). If the used motor is restricted to less than the input
+voltage, the duty cycle of the motor output can be used to reduce the average voltage accordingly. The full schematics can be found in this repository.
+
+The board layout of the sensorimotor is designed to fit roughly into large-scale servos of different manufacturers. The SMT parts are restricted to be on a single side of the board to reduce manufacturing costs or allow for easier soldering. The power traces are made as wide as board space was available to reduce trace resistance and increase the heat sink. However, an additional heat sink should be considered when driving heavier loads.
+
+
+
+=== Frequently Asked Questions
+
+If you want to get Sensorimotor boards for your project, consider supporting the _Supreme Machines_ team and link:https://www.tindie.com/products/jetpack/sensorimotor/[buy the boards] from our maker-friendly Tindie store. If buying is not an option for you and you want to manufacture or design your own boards, please read the FAQ below and/or contact us.
+
+
+==== What license do you use for the hardware design?
+
+All Sensorimotor schematics are licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/. In the future, we will publish the software and schematics for all official sensorimotor hardware, but not necessarily the complete hardware layout with Gerber files and bill of materials.
+
+
+==== You said free design? Why don't you share the design files?
+
+Oh, we actually do share. We just don't publish them online for anonymous persons. There are multiple reasons for this. Please go on reading, and let us explain.
+
+We see _free_ as in freedom, not as in _free of charge_. As a hardware project, we can only survive if people are buying our hardware. The design is free, check the schematics and the source-code, for instance, everything you need is there.
+
+
+==== I want to make a custom design. Can you provide me the design files for starting my project?
+
+The project's source-code files and schematics already provide everything you need to make your own custom sensorimotor version to fill a missing spot. We encourage that you design your own hardware if you are serious about what you are doing.
+
+The reason for expressing this harshly is that in contrast to software, the hardware layout is not very reusable when creating new hardware. For instance, for creating the Sensorimotor Kiwi (a micro-servo version), we made a completely new project and only looked at the schematic for the sensorimotor's 6 amps version.
+
+Creating schematics or layouts is quite different from working with code. It is mostly faster and simpler to layout everything from scratch rather than moving things around. Also different from coding software, the design tools being used are not as interchangeable as your favorite IDE, so you probably would need to use exactly the same tool as we did.
+
+Furthermore, schematics and layouts are unfortunately not as easily maintained by a group of remote developers, due to the long development and production loop, and efforts in manually testing the designs.
+
+
+==== Your boards are too expensive for me. If I make them myself it's certainly cheaper.
+
+We are working on a lower price for the boards. However, this can only happen if we order them in large quantities. So your order helps to lower the price for everyone else (including future-you). If you order your PCBs and parts independently, you will certainly get the lowest price, but you will have to take a lot of time to procure parts and solder and test the boards. If you consider the time you will spend, buying is a definite alternative.
+For instance, the first 20 boards we manufactured for a four-legged robot, took us at least 3 full days to get them soldered and tested. And you need good equipment and already some practice too. SMD soldering is way more challenging than soldering through-hole parts. Don't underestimate it.
+
+
+==== I'm a hardware manufacturer and I want to produce and sell Sensorimotor boards.
+
+We want to grow a Sensorimotor ecosystem. So if you are a hardware manufacturer please talk to us and let us consider partnering here. Write to us and let us figure out how we can create the best-quality sensorimotor boards affordable for everyone.
+
+We don't want to annoy people with broken boards and hence want to assure that always fully functional Sensorimotor boards are delivered. This is even more important for our still small developers team which is doing the support. If there would be a lot of low-quality boards in the wild it would create an unacceptable workload on the spare time of volunteer developers to debug problems originating from inferior hardware.
+
+
+==== We are a company and want to include Sensorimotors in our product.
+
+Great choice, let's get in touch and discuss ordering larger quantities of boards or custom designs for you to reach an acceptable target price and the best quality of the boards to be included in your product.
+
+
+==== We want a custom derivative board but we have no development resources. Can you design it for us?
+
+Please contact us and tell us about your idea, we surely can help here.
+
+
+==== None of the above relates to me. How can I nonetheless get the Sensorimotor design files?
+
+Just write us an email with a quick description of your project and we will send you the files. However, there are a few restrictions. We will not support military projects or uses that do harm to the environment, animals, or human life.
