@@ -6,7 +6,7 @@ v0.1, 2020-07-16
 image:./ux0_rev1_assembly.jpg[Sensorimotor PCB, width="48%"]
 
 
-== A free-design smart motor controller.
+== A free-design distributed motor controller.
 
 === Summary
 Sensorimotor is a free-design, distributed DC servo controller that is networked via RS485 and aims at complementing the spectrum of low-cost robotic hardware for legged robots.
