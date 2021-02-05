@@ -22,6 +22,7 @@ public:
 	void set_target_pwm(uint8_t pwm) { voltage_pwm = pwm; }
 	void set_pwm_limit(uint8_t lim) { max_pwm = lim; }
 	void set_target_dir(bool dir) { direction = dir; }
+	void set_default_dir(bool dir) { def_dir = dir; }
 
 	void toggle_enable() { enabled = not enabled; }
 	void enable()  { enabled = true; }
@@ -37,7 +38,8 @@ public:
 	uint8_t max_pwm = 0;
 	uint8_t voltage_pwm = 0;
 	bool    direction = false;
-	bool    enabled = false;
+	bool    def_dir   = false;
+	bool    enabled   = false;
 
 	ExternalSensor sensor_ext;
 };

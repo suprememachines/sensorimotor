@@ -2,4 +2,5 @@ build/
 *.bak
 .sconsign.dblite
 *.gch
+*.o
 run_tests
