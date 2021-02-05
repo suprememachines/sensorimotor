@@ -1,21 +1,25 @@
 /*---------------------------------+
+ | Jetpack Cognition Lab, Inc.     |
  | Supreme Machines                |
- | Sensorimotor Firmware           |
+ | Sensorimotor Rev. 1.2 Firmware  |
  | Matthias Kubisch                |
  | kubisch@informatik.hu-berlin.de |
- | November 2018                   |
+ | January 2021                    |
  +---------------------------------*/
 
 #ifndef SUPREME_SENSORIMOTOR_CORE_HPP
 #define SUPREME_SENSORIMOTOR_CORE_HPP
 
 #include <system/adc.hpp>
+#include <system/ledpwm.hpp>
 #include <common/temperature.hpp>
 
 namespace supreme {
 
 namespace defaults {
 	const uint8_t pwm_limit = 32; /* 12,5% duty cycle */
+	const bool    direction = false;
+
 
 	const int16_t lut_1byX[501] = { /* TODO: reduce memory footprint of this LUT */
 	   0, 1000, 500, 333, 250, 200, 166, 142, 125, 111, 100, 90, 83, 76, 71, 66, 62, 58, 55, 52, 50, 47, 45, 43, 41, 40, 38, 37, 35, 34, 33, 32, 31, 30, 29, 28, 27, 27, 26, 25, 25, 24, 23, 23, 22, 22, 21, 21, 20, 20, 20, 19, 19, 18, 18, 18, 17, 17, 17, 16, 16, 16, 16, 15, 15, 15, 15, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 11, 11, 11, 11, 11, 11, 11, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
@@ -26,7 +30,7 @@ class Sensors {
 public:
 	uint16_t position         = 0;
 	uint16_t current          = 0;
-	uint16_t voltage_back_emf = 0;
+	//uint16_t voltage_back_emf = 0;
 	uint16_t voltage_supply   = 0;
 	uint16_t temperature      = 0;
 
@@ -42,7 +46,7 @@ public:
 	{
 		position         = adc::result[adc::position] << 6; /* promote to upper bits and lowpass-filter */
 		current          = adc::result[adc::current];
-		voltage_back_emf = adc::result[adc::voltage_back_emf];
+		//voltage_back_emf = adc::result[adc::voltage_back_emf];
 		voltage_supply   = adc::result[adc::voltage_supply];
 		temperature      = get_temperature_celsius(adc::result[adc::temperature]);
 
@@ -104,28 +108,31 @@ class sensorimotor_core {
 
 	uint8_t          watchcat = 0;
 	uint8_t          max_pwm = defaults::pwm_limit;
+	bool             def_dir = defaults::direction;
 
 public:
+	Pulsed_LED       pled;
 
 	sensorimotor_core()
 	: enabled(false)
 	, target()
 	, sensors()
 	, motor()
+	, pled()
 	{
-		motor.disable();
 		motor.set_pwm(0);
+		pled.enable();
 	}
 
 	void apply_target_values(void) {
 		if (enabled) {
 			motor.set_pwm(target.pwm);
-			motor.set_dir(target.dir);
-			motor.enable();
+			motor.set_dir(target.dir != def_dir);
+			pled.set_pwm(target.pwm);
 		} else {
 			motor.set_pwm(0);
-			motor.disable();
 			target.pwm = 0;
+			pled.idle();
 		}
 	}
 
@@ -140,9 +147,10 @@ public:
 		else enabled = false;
 	}
 
-	void set_pwm_limit (uint8_t lim) { max_pwm = lim; }
-	void set_target_pwm(uint8_t pwm) { target.pwm = pwm < max_pwm ? pwm : max_pwm; }
-	void set_target_dir(bool    dir) { target.dir = dir; }
+	void set_pwm_limit  (uint8_t lim) { max_pwm = lim; }
+	void set_target_pwm (uint8_t pwm) { target.pwm = pwm < max_pwm ? pwm : max_pwm; }
+	void set_target_dir (bool    dir) { target.dir = dir; }
+	void set_default_dir(bool    dir) { def_dir = dir; }
 
 	void enable()  { enabled = true; watchcat = 0; }
 	void disable() { enabled = false; }
@@ -151,9 +159,17 @@ public:
 	uint16_t get_position        () const { return sensors.position; }
 	uint16_t get_velocity        ()       { return sensors.restart_velocity_sampling(); }
 	uint16_t get_current         () const { return sensors.current; }
-	uint16_t get_voltage_back_emf() const { return sensors.voltage_back_emf; }
+	//uint16_t get_voltage_back_emf() const { return sensors.voltage_back_emf; }
 	uint16_t get_voltage_supply  () const { return sensors.voltage_supply; }
 	uint16_t get_temperature     () const { return sensors.temperature; }
+
+	/* halt all ongoing processes */
+	void halt(void) {
+		enabled = false;
+		target.pwm = 0;
+		motor.set_pwm(0);
+		pled.disable();
+	}
 };
 
 } /* namespace supreme */

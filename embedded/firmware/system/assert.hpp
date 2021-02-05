@@ -1,9 +1,10 @@
 /*---------------------------------+
+ | Jetpack Cognition Lab, Inc.     |
  | Supreme Machines                |
- | Sensorimotor Firmware           |
+ | Sensorimotor Rev 1.1 Firmware   |
  | Matthias Kubisch                |
  | kubisch@informatik.hu-berlin.de |
- | November 2018                   |
+ | January 2021                    |
  +---------------------------------*/
 
 #ifndef SUPREME_COMMON_ASSERT_HPP
@@ -29,20 +30,21 @@ void blink(uint8_t code) {
 		led::yellow::reset();
 		xpcc::delayMilliseconds(250);
 	}
-	led::red::reset();
-	led::yellow::reset();
 }
 
-
-void assert(bool condition, uint8_t code = 0) {
+void assert(bool condition, constants::assertion code) {
 	if (condition) return;
+	//TODO halt PWMs and other stuff
+
 	led::red::reset();
 	led::yellow::reset();
 	while(1) {
-		blink(code);
+		blink(static_cast<uint8_t>(code));
 		xpcc::delayMilliseconds(1000);
 	}
 }
+
+inline void stop(constants::assertion code) { assert(false, code); }
 
 } /* namespace supreme */
 

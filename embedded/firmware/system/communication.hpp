@@ -1,38 +1,23 @@
 /*---------------------------------+
+ | Jetpack Cognition Lab, Inc.     |
  | Supreme Machines                |
- | Sensorimotor Firmware           |
+ | Sensorimotor Rev 1.1 Firmware   |
  | Matthias Kubisch                |
  | kubisch@informatik.hu-berlin.de |
- | November 2018                   |
+ | January 2021                    |
  +---------------------------------*/
 
 #ifndef SUPREME_COMMUNICATION_HPP
 #define SUPREME_COMMUNICATION_HPP
 
 #include <xpcc/architecture/platform.hpp>
-#include <avr/eeprom.h>
+#include <system/eeprom.hpp>
 #include <system/assert.hpp>
 #include <system/sendbuffer.hpp>
 
-/*
-TODO: create new scheme for command processing:
-
-	0) get sync bytes
-	1) detect command
-	2) look up expected number of bytes
-	3) read all bytes (including checksum)
-	4) verify checksum
-	5) process command (or discard)
-		+ dicard if
-			- ID does not match
-			- checksum is incorrect
-			- timeout in byte stream
-
-	consider having a class for each command, derived from a (virtual) base class
-
-	TODO: clear recv buffer after timeout
-*/
 namespace supreme {
+
+using constants::assertion;
 
 template <typename CoreType, typename ExternalSensorType>
 class communication_ctrl {
@@ -42,14 +27,17 @@ public:
 		data_requested,
 		data_requested_response,
 		set_voltage,
-		toggle_led,
 		ping,
 		ping_response,
 		set_id,
 		set_id_response,
 		set_pwm_limit,   /* no response */
+		configure,
+		configure_response,
 		ext_sensor_request,
 		ext_sensor_request_resp,
+		raw_data,
+		raw_data_response,
 	};
 
 	enum command_state_t {
@@ -65,30 +53,44 @@ public:
 	};
 
 private:
-	CoreType&                    ux;
-	ExternalSensorType&          exts;
-	uint8_t                      recv_buffer = 0;
-	uint8_t                      recv_checksum = 0;
-	sendbuffer<16>               send;
+	CoreType&           ux;
+	ExternalSensorType& exts;
 
-	uint8_t                      motor_id = 127; // set to default
-	uint8_t                      target_id = 127;
+	uint8_t             recv_buffer = 0;
+	uint8_t             recv_checksum = 0;
+	sendbuffer<16>      send;
+
+	uint8_t             motor_id  = constants::max_id; // default
+	uint8_t             target_id = constants::max_id;
+
+	struct {
+		bool default_dir = false;
+	} config;
 
 	/* motor related */
-	bool                         target_dir = false;
-	uint8_t                      target_pwm = 0;
-	uint8_t                      target_pwm_max = 0;
+	bool                target_dir = false;
+	uint8_t             target_pwm = 0;
+	uint8_t             target_pwm_max = 0;
 
-	/* TODO struct? */
-	command_id_t                 cmd_id    = no_command;
-	command_state_t              cmd_state = syncing;
-	unsigned int                 cmd_bytes_received = 0;
+	struct {
+		command_id_t     id    = no_command;
+		command_state_t  state = syncing;
+		unsigned int     bytes_received = 0;
+	} cmd;
 
-	bool                         led_state = false;
-	bool                         sync_state = false;
+	bool                sync_state = false;
+	uint8_t             num_bytes_read = 0;
+	uint16_t            errors = 0;
 
-	uint8_t                      num_bytes_eaten = 0;
-	uint16_t                     errors = 0;
+	int                 exp_msg_length = -1;
+	uint8_t             dat[256];
+
+	/* reset com module if no new bytes have arrived
+	   for several steps while in uart parsing. */
+	uint8_t             watchdog = 0;
+
+	/* signal from host to halt and jump to bootloader */
+	bool                halt = false;
 
 public:
 
@@ -97,26 +99,15 @@ public:
 	, exts(exts)
 	, send()
 	{
-		read_id_from_EEPROM();
+		EEPROM::read_id(motor_id);
+		config.default_dir = EEPROM::read_dir();
+		ux.set_default_dir(config.default_dir);
 
 		rs485::drive_enable::setOutput();
 		rs485::drive_enable::reset();
 
 		rs485::read_disable::setOutput();
 		rs485::read_disable::reset();
-	}
-
-	// TODO move to eeprom/memory class
-	void read_id_from_EEPROM() {
-		eeprom_busy_wait();
-		uint8_t read_id = eeprom_read_byte((uint8_t*)23);
-		if (read_id) /* MSB is set, check if this id was written before */
-			motor_id = read_id & 0x7F;
-	}
-
-	void write_id_to_EEPROM(uint8_t new_id) {
-		eeprom_busy_wait();
-		eeprom_write_byte((uint8_t*)23, (new_id | 0x80));
 	}
 
 	inline
@@ -127,37 +118,41 @@ public:
 		return result;
 	}
 
-	command_state_t get_state()    const { return cmd_state; }
+	command_state_t get_state()    const { return cmd.state; }
 	uint8_t         get_motor_id() const { return motor_id; }
 	uint16_t        get_errors()   const { return errors; }
 
 	command_state_t waiting_for_id()
 	{
-		if (recv_buffer > 127) return error;
-		switch(cmd_id)
+		if (recv_buffer > constants::max_id) return error;
+		switch(cmd.id)
 		{
 			/* single byte commands */
 			case data_requested:
-			case toggle_led:
 			case ping:
 				return (motor_id == recv_buffer) ? verifying : eating;
 
 			/* multi-byte commands */
 			case set_voltage:
+			case raw_data:
 			case set_id:
 			case set_pwm_limit:
+			case configure:
 			case ext_sensor_request:
 				return (motor_id == recv_buffer) ? reading : eating;
 
 			/* responses */
-			case ping_response:           return eating;
-			case set_id_response:         return eating;
-			case data_requested_response: return eating;
-			case ext_sensor_request_resp: return eating;
+			case ping_response:
+			case set_id_response:
+			case configure_response:
+			case data_requested_response:
+			case ext_sensor_request_resp:
+			case raw_data_response:
+				return eating;
 
 			default: /* unknown command */ break;
 		}
-		assert(false, 3);
+		stop(assertion::waiting_for_id);
 		return finished;
 	}
 
@@ -170,14 +165,14 @@ public:
 		send.add_word(ux.get_velocity());
 		send.add_word(ux.get_voltage_supply());
 		send.add_word(ux.get_temperature());
-		//TODO: integrate voltage_back_emf again
+		//TODO: integrate voltage_back_emf?
 		//TODO: integrate state/context fields
 		//TODO: integrate error/status codes
 	}
 
 	command_state_t process_command()
 	{
-		switch(cmd_id)
+		switch(cmd.id)
 		{
 			case data_requested:
 				ux.disable();
@@ -192,25 +187,25 @@ public:
 				prepare_data_response();
 				break;
 
-			case toggle_led: //TODO: apply pwm to LED
-				if (led_state) {
-					led::yellow::reset();
-					led_state = false;
-				}
-				else {
-					led::yellow::set();
-					led_state = true;
-				}
-				break;
-
 			case ping:
 				send.add_byte(0xE1); /* 1110.0001 */
 				send.add_byte(motor_id);
 				break;
 
+			case raw_data:
+				if (1 == exp_msg_length and 'S' == dat[0])
+				{
+					send.add_byte(0x56); /* 1101.0110 */
+					send.add_byte(motor_id);
+					send.add_byte(0x1); // one byte msg len
+					send.add_byte('Y'); // send ack
+					halt = true;
+				}
+				break;
+
 			case set_id:
-				write_id_to_EEPROM(target_id);
-				read_id_from_EEPROM();
+				EEPROM::update_id(target_id);
+				motor_id = target_id;
 				send.add_byte(0x71); /* 0111.0001 */
 				send.add_byte(motor_id);
 				break;
@@ -218,6 +213,13 @@ public:
 			case set_pwm_limit:
 				ux.set_pwm_limit(target_pwm_max);
 				/* no response needed */
+				break;
+
+			case configure:
+				EEPROM::update_dir(config.default_dir);
+				ux.set_default_dir(config.default_dir);
+				send.add_byte(0x51); /* 0101.0001 */
+				send.add_byte(motor_id);
 				break;
 
 			case ext_sensor_request:
@@ -233,10 +235,10 @@ public:
 				break;
 
 			default: /* unknown command */
-				assert(false, 2);
+				stop(assertion::process_command);
 				break;
 
-		} /* switch cmd_id */
+		} /* switch cmd.id */
 
 		return finished;
 	}
@@ -245,7 +247,7 @@ public:
 	/* handle multi-byte commands */
 	command_state_t waiting_for_data()
 	{
-		switch(cmd_id)
+		switch(cmd.id)
 		{
 			case set_voltage:
 				target_pwm = recv_buffer;
@@ -256,10 +258,23 @@ public:
 					target_id = recv_buffer;
 					return verifying;
 				}
-				else return error;
+				else
+					return error;
 
 			case set_pwm_limit:
 				target_pwm_max = recv_buffer;
+				return verifying;
+
+			case raw_data:
+				// first byte of raw data is the data length
+				if (-1 == exp_msg_length)
+					exp_msg_length = recv_buffer;
+				else
+					dat[num_bytes_read++] = recv_buffer;
+				return (num_bytes_read < exp_msg_length) ? reading : verifying;
+
+			case configure:
+				config.default_dir = static_cast<bool>(recv_buffer & 0x1);
 				return verifying;
 
 			case ext_sensor_request:
@@ -268,38 +283,49 @@ public:
 
 			default: /* unknown command */ break;
 		}
-		assert(false, 4);
+		stop(assertion::waiting_for_data);
 		return finished;
 	}
 
 	command_state_t eating_others_data()
 	{
-		++num_bytes_eaten;
-		switch(cmd_id)
+		++num_bytes_read; /* eat bytes, not reading actually */
+
+		/*TODO: 'exp_msg_length' could be used here, too
+		define for each command the num expected bytes and
+		this functions will greatly simplify. */
+		switch(cmd.id)
 		{
 			case data_requested:
-			case toggle_led:
 			case ping:
 			case ping_response:
 			case set_id_response:
-				assert(num_bytes_eaten == 1, 77);
+			case configure_response:
+				assert(num_bytes_read == 1, assertion::single_byte_commands);
 				return finished;
 
 			case set_voltage:
 			case set_id:
 			case set_pwm_limit:
+			case configure:
 			case ext_sensor_request:
-				return (num_bytes_eaten <  2) ? eating : finished;
+				return (num_bytes_read <  2) ? eating : finished;
 
 			case ext_sensor_request_resp:
-				return (num_bytes_eaten <  7) ? eating : finished;
+				return (num_bytes_read <  7) ? eating : finished;
 
 			case data_requested_response:
-				return (num_bytes_eaten < 11) ? eating : finished;
+				return (num_bytes_read < 11) ? eating : finished;
+
+			case raw_data:
+			case raw_data_response:
+				if (-1 == exp_msg_length)
+					exp_msg_length = recv_buffer;
+				return (num_bytes_read < exp_msg_length+1) ? eating : finished;
 
 			default: /* unknown command */ break;
 		}
-		assert(false, 5);
+		stop(assertion::eating_others_data);
 		return finished;
 	}
 
@@ -310,7 +336,7 @@ public:
 
 	command_state_t get_sync_bytes()
 	{
-		if (recv_buffer != 0xFF) {
+		if (recv_buffer != constants::syncbyte) {
 			sync_state = false;
 			return finished;
 		}
@@ -329,26 +355,30 @@ public:
 		switch(recv_buffer)
 		{
 			/* single byte commands */
-			case 0xC0: /* 1100.0000 */ cmd_id = data_requested;          break;
-			case 0xD0: /* 1101.0000 */ cmd_id = toggle_led;              break;
+			case 0xC0: /* 1100.0000 */ cmd.id = data_requested;          break;
 
 			/* multi-byte commands */
 			case 0xB0: /* 1011.0000 */ //fall through
-			case 0xB1: /* 1011.0001 */ cmd_id = set_voltage;
+			case 0xB1: /* 1011.0001 */ cmd.id = set_voltage;
 			                           target_dir = recv_buffer & 0x1;   break;
-			case 0xE0: /* 1110.0000 */ cmd_id = ping;                    break;
-			case 0xA0: /* 1010.0000 */ cmd_id = set_pwm_limit;           break;
-			case 0x70: /* 0111.0000 */ cmd_id = set_id;                  break;
-			case 0x40: /* 0100.0000 */ cmd_id = ext_sensor_request;      break;
+			case 0xE0: /* 1110.0000 */ cmd.id = ping;                    break;
+			case 0xA0: /* 1010.0000 */ cmd.id = set_pwm_limit;           break;
+			case 0x70: /* 0111.0000 */ cmd.id = set_id;                  break;
+			case 0x50: /* 0101.0000 */ cmd.id = configure;               break;
+			case 0x40: /* 0100.0000 */ cmd.id = ext_sensor_request;      break;
 
 			/* read but ignore sensorimotor responses */
-			case 0xE1: /* 1110.0001 */ cmd_id = ping_response;           break;
-			case 0x71: /* 0111.0001 */ cmd_id = set_id_response;         break;
-			case 0x80: /* 1000.0000 */ cmd_id = data_requested_response; break;
-			case 0x41: /* 0400.0001 */ cmd_id = ext_sensor_request_resp; break;
+			case 0xE1: /* 1110.0001 */ cmd.id = ping_response;           break;
+			case 0x71: /* 0111.0001 */ cmd.id = set_id_response;         break;
+			case 0x51: /* 0101.0001 */ cmd.id = configure_response;      break;
+			case 0x80: /* 1000.0000 */ cmd.id = data_requested_response; break;
+			case 0x41: /* 0400.0001 */ cmd.id = ext_sensor_request_resp; break;
+
+			case 0x55: /* 0101.0101 */ cmd.id = raw_data;                break;
+			case 0x56: /* 0101.0110 */ cmd.id = raw_data_response;       break;
 
 			default: /* unknown command */
-				return error;
+				return finished;
 
 		} /* switch recv_buffer */
 
@@ -358,70 +388,77 @@ public:
 	/* return code true means continue processing, false: wait for next byte */
 	bool receive_command()
 	{
-		switch(cmd_state)
+		/* withdraw current attempt to parse bytes
+		   if there is no new data for 100ms */
+		if (syncing != cmd.state) watchdog++;
+		if (watchdog > 100/*ms*/) cmd.state = error;
+
+		switch(cmd.state)
 		{
 			case syncing:
 				if (not byte_received()) return false;
-				cmd_state = get_sync_bytes();
+				cmd.state = get_sync_bytes();
 				break;
 
 			case awaiting:
 				if (not byte_received()) return false;
-				cmd_state = search_for_command();
+				cmd.state = search_for_command();
 				break;
 
 			case get_id:
 				if (not byte_received()) return false;
-				cmd_state = waiting_for_id();
+				cmd.state = waiting_for_id();
 				break;
 
 			case reading:
 				if (not byte_received()) return false;
-				cmd_state = waiting_for_data();
+				cmd.state = waiting_for_data();
 				break;
 
 			case eating:
 				if (not byte_received()) return false;
-				cmd_state = eating_others_data();
+				cmd.state = eating_others_data();
 				break;
 
 			case verifying:
 				if (not byte_received()) return false;
-				cmd_state = verify_checksum();
+				cmd.state = verify_checksum();
 				break;
 
 			case pending:
-				cmd_state = process_command();
+				cmd.state = process_command();
 				break;
 
 			case finished: /* cleanup, prepare for next message */
 				send.flush();
-				cmd_id = no_command;
-				cmd_state = syncing;
-				num_bytes_eaten = 0;
+				cmd.id = no_command;
+				cmd.state = syncing;
+				num_bytes_read = 0;
 				recv_checksum = 0;
-				assert(sync_state == false, 55);
+				exp_msg_length = -1;
+				watchdog = 0;
+				assert(sync_state == false, assertion::no_sync_in_finished);
 				/* anything else todo? */
 				break;
 
 			case error:
 				if (errors < 0xffff) ++errors;
-				led::yellow::set();
 				send.discard();
-				cmd_state = finished;
+				cmd.state = finished;
 				break;
 
 			default: /* unknown command state */
-				assert(false, 17);
+				stop(assertion::unknown_command_state);
 				break;
 
-		} /* switch cmd_state */
+		} /* switch cmd.state */
 		return true; // continue
 	}
 
 	inline
-	void step() {
+	bool step() {
 		while(receive_command());
+		return halt;
 	}
 };
 
