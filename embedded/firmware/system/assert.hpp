@@ -9,7 +9,7 @@
 #ifndef SUPREME_COMMON_ASSERT_HPP
 #define SUPREME_COMMON_ASSERT_HPP
 
-#include <xpcc/architecture/platform.hpp>
+#include <modm/platform.hpp>
 
 namespace supreme {
 
@@ -24,10 +24,10 @@ void blink(uint8_t code) {
 			led::red::set();
 			led::yellow::reset();
 		}
-		xpcc::delayMilliseconds(250);
+		modm::delay_ms(250);
 		led::red::reset();
 		led::yellow::reset();
-		xpcc::delayMilliseconds(250);
+		modm::delay_ms(250);
 	}
 	led::red::reset();
 	led::yellow::reset();
@@ -40,7 +40,7 @@ void assert(bool condition, uint8_t code = 0) {
 	led::yellow::reset();
 	while(1) {
 		blink(code);
-		xpcc::delayMilliseconds(1000);
+		modm::delay_ms(1000);
 	}
 }
 

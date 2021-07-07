@@ -11,7 +11,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <xpcc/architecture/platform.hpp>
+#include <modm/platform.hpp>
 
 /*
 	+-------+-------+------------------------------------------+

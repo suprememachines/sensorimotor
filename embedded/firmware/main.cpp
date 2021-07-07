@@ -6,22 +6,41 @@
  | October 2018                    |
  +---------------------------------*/
 
-#include <xpcc/architecture/platform.hpp>
+#include <avr/io.h>
+#include <modm/platform.hpp>
 #include <boards/sensorimotor_rev1_1.hpp>
 #include <system/core.hpp>
 #include <system/communication.hpp>
 #include <system/adc.hpp>
 #include <external/i2c_sensor.hpp>
 
-/* this is called once TCNT0 = OCR0A = 249 *
- * resulting in a 1 ms cycle time, 1kHz    */
-volatile bool current_state = false;
-ISR (TIMER0_COMPA_vect)
-{
-	current_state = !current_state;
-	xpcc::Clock::increment();
-}
+using namespace std::chrono_literals;
 
+/* FUSES ************************************************************** *
+*                                                                       *
+*        SUT0-----+ +-----CKSEL3                                        *
+*        SUT1----+| |+----CKSEL2                                        *
+*       CKOUT---+|| ||+---CKSEL1                                        *
+*      CKDIV8--+||| |||+--CKSEL0                                        *
+*              |||| ||||                                                *
+* lfuse: 0xCF: 1100.1111                                                *
+*        CKSEL3..1       = 111 : >8 Mhz external oscillator             *
+*        CKSEL0, SUT1..0 = 100 : Ceramic Resonator, slowly rising power *
+*        CKOUT           = 0   : no clock output                        *
+* hfuse: 0xD9 (defaults)                                                *
+* efuse: 0xFD: xxxx.x101 Brownout detection min:2V5 typ:2V7 max:2V9     *
+* fuses explained: http://www.ladyada.net/learn/avr/fuses.html          *
+* calculator: http://www.engbedded.com/fusecalc/                        *
+*                                                                       *
+* atmega328p defaults: lfuse: 0x62, hfuse: 0xD9, efuse 0x07 (0xFF)      *
+* ********************************************************************* */
+FUSES = {
+	.low = 0xCF,
+	.high = 0xD9,
+	.extended = 0xFD,
+};
+
+modm::PeriodicTimer timer{1ms}; // render at 1kHz ideally
 
 int main()
 {
@@ -34,34 +53,20 @@ int main()
 	core_t core;
 	exts_t exts;
 
-	/* Design of the 1kHz main loop:
-	 * 16Mhz clock, prescaler 64 -> 16.000.000 / 64 = 250.000 increments per second
-	 * diveded by 1000 -> 250 increments per ms
-	 * hence, timer compare register to 250-1 -> ISR inc ms counter -> 1kHz loop
-	 *
-	 * configure timer 0:
-	 */
-	TCCR0A = (1<<WGM01);             // CTC mode
-	TCCR0B = (1<<CS01) | (1<<CS00);  // set prescaler to 64
-	OCR0A = 249;                     // set timer compare register to 250-1
-	TIMSK0 = (1<<OCIE0A);            // enable compare interrupt
-
 	unsigned long cycles = 0;
 
 	supreme::communication_ctrl<core_t, exts_t> com(core, exts);
 
-	bool previous_state = false;
 	core.init_sensors();
 	while(1) /* main loop */
 	{
 		com.step();
-		if (current_state != previous_state) {
+		if (timer.execute()) {
 			led::red::set();   // red led on, begin of cycle
 			core.step();
 			supreme::adc::restart();
 			++cycles;
 			led::red::reset(); // red led off, end of cycle
-			previous_state = current_state;
 		} else
 			exts.step();
 	}

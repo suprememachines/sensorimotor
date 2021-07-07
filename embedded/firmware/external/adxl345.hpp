@@ -38,13 +38,13 @@
 #ifndef SUPREME_ADXL345_HPP
 #define SUPREME_ADXL345_HPP
 
-#include <xpcc/architecture/platform.hpp>
-#include <xpcc/processing/timer.hpp>
-#include <xpcc/processing/protothread.hpp>
-#include <xpcc/processing/resumable.hpp>
-#include <xpcc/architecture/interface/i2c_device.hpp>
+#include <modm/platform.hpp>
+#include <modm/processing/timer.hpp>
+#include <modm/processing/protothread.hpp>
+#include <modm/processing/resumable.hpp>
+#include <modm/architecture/interface/i2c_device.hpp>
 
-namespace xpcc
+namespace modm
 {
 	namespace adxl345
 	{
@@ -185,7 +185,7 @@ namespace xpcc
 	 * \tparam I2cMaster Asynchronous Two Wire interface
 	 */
 	template < typename I2cMaster >
-	class Adxl345 : /*protected xpcc::I2cWriteReadTransaction*/ public xpcc::I2cDevice<I2cMaster, 2>
+	class Adxl345 : /*protected modm::I2cWriteReadTransaction*/ public modm::I2cDevice<I2cMaster, 2>
 	{
 	public:
 		/**
@@ -229,7 +229,7 @@ namespace xpcc
 		bool
 		isDataReady();
 
-		xpcc::ResumableResult<void>
+		modm::ResumableResult<void>
 		update();
 
 	private:
